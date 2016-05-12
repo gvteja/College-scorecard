@@ -151,7 +151,7 @@ def forward_selection(df_x, df_y, k=None):
             scores.append((score, candidate))
         
         score, best_candidate = min(scores)
-        print len(selected), score, best_candidate
+        #print len(selected), score, best_candidate
         
         remaining.remove(best_candidate)
         selected.append(best_candidate)
@@ -161,16 +161,15 @@ def forward_selection(df_x, df_y, k=None):
 
 k = 100
 print 'Discovering the top {0} features using forward selection:'.format(k)
-fw_selected = forward_selection(df_xtrain, df_ytrain, k)
+fw_selected = forward_selection(df_x, df_y2, k)
 
 print 'The top {0} features using forward selection are:'.format(k)
 for var in fw_selected:
     print var
 
 print 'Building a linear regression model using the selected features for significance testing...'
-formula = "{} ~ {} + 1".format('md_earn_wne_p10',
-                                   ' + '.join(fw_selected))
-fw_model = smf.ols(formula, df).fit()
+formula = "{} ~ {} + 1".format('md_earn_wne_p10',' + '.join(fw_selected))
+fw_model = smf.ols(formula, df_numeric).fit()
 
 print 'Performing significance test on individual variables using benjamini hochberg correction...'
 reject, _, _, _  = multipletests(fw_model.pvalues, method='fdr_bh')
