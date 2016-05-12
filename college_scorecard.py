@@ -16,6 +16,8 @@ from sklearn.metrics import mean_squared_error
 
 import statsmodels.formula.api as smf
 
+from statsmodels.sandbox.stats.multicomp import multipletests
+
 print 'Reading data dictionary file...'
 dd = pd.read_csv('CollegeScorecardDataDictionary-09-12-2015.csv', header=0)
 
@@ -157,14 +159,32 @@ def forward_selection(df_x, df_y, k=None):
     return selected
 
 
-print 'Discovering the top 100 features using forward selection:'
-fw_selected = forward_selection(df_xtrain, df_ytrain, 100)
+k = 100
+print 'Discovering the top {0} features using forward selection:'.format(k)
+fw_selected = forward_selection(df_xtrain, df_ytrain, k)
 
+print 'The top {0} features using forward selection are:'.format(k)
+for var in fw_selected:
+    print var
 
 print 'Building a linear regression model using the selected features for significance testing...'
-model = LinearRegression()
-model = model.fit(df[fw_selected], df_y2)
+formula = "{} ~ {} + 1".format('md_earn_wne_p10',
+                                   ' + '.join(fw_selected))
+fw_model = smf.ols(formula, df).fit()
 
+print 'Performing significance test on individual variables using benjamini hochberg correction...'
+reject, _, _, _  = multipletests(fw_model.pvalues, method='fdr_bh')
+
+significant_vars = []
+for i in range(len(reject)):
+    if reject[i]:
+        significant_vars.append(fw_selected[i])
+
+print 'Found {0} significant variables out of {1} selected variables'.format(len(significant_vars), len(fw_selected))
+
+print 'The significant variables are:'
+for var in significant_vars:
+    print var
 
 # PREDICTION
 print 'Starting Prediction phase...'
