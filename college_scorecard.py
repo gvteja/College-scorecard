@@ -3,6 +3,7 @@
 import sys
 import pandas as pd
 import numpy as np
+import scipy.stats as ss
 
 from sklearn.cross_validation import train_test_split
 
@@ -40,13 +41,12 @@ for index, row in dd.iterrows():
 print 'Found {0} categorical variables'.format(len(cat_vars))
 
 
-
 print 'Reading the college data for year 2011...'
 df = pd.read_csv('MERGED2011_PP.csv', header=0)
 
 print 'Shape of college data:', df.shape
 
-print 'Removing identifier/fine grain columns like OPEID..'
+print 'Removing identifier/fine grain columns like OPEID...'
 
 bad_threshold = 1 / 4.0
 print 'Removing columns with fraction of bad count > ', bad_threshold
@@ -111,6 +111,13 @@ for col in cat_vars.intersection(set(df.columns)):
     
 print 'New df shape after dummyfying:', df.shape
 
+# rename columns with . in name to _
+# this is causing problems in OLS method later
+rename_dict = {}
+for col in df.columns:
+    rename_dict[col] = col.replace('.', '_')
+
+df.rename(columns=rename_dict, inplace=True)
 
 # some columns get object type due to privacy suppressed values
 # the categorical varaibles are also converted to one-hot values
@@ -140,7 +147,7 @@ def forward_selection(df_x, df_y, k=None):
     remaining = set(df_x.columns)
     selected = []
 
-    while remaining and len(selected) <= k:
+    while remaining and len(selected) < k:
         scores = []
         for candidate in remaining:
             X = df_x[selected + [candidate]]
@@ -172,7 +179,7 @@ formula = "{} ~ {} + 1".format('md_earn_wne_p10',' + '.join(fw_selected))
 fw_model = smf.ols(formula, df_numeric).fit()
 
 print 'Performing significance test on individual variables using benjamini hochberg correction...'
-reject, _, _, _  = multipletests(fw_model.pvalues, method='fdr_bh')
+reject, _, _, _  = multipletests(fw_model.pvalues[1:], method='fdr_bh')
 
 significant_vars = []
 for i in range(len(reject)):
@@ -248,6 +255,6 @@ for i in range(1, 9):
     gc = GridSearchCV(estimator=Ridge(), param_grid=gs_params)
     ridge_model = gc.fit(X_reduced_train, Y_train)
     Y_pred = ridge_model.predict(X_reduced_test)
-    print 'MSE for ', n_components, ' components with Ridge ', mean_squared_error(Y_test, Y_pred)
+    print 'RMSE for ', n_components, ' components with Ridge ', mean_squared_error(Y_test, Y_pred) ** 0.5
 
 
