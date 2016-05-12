@@ -192,6 +192,18 @@ print 'The significant variables are:'
 for var in significant_vars:
     print var
 
+print 'The coefficents of the top 5 significant vars are:'
+for i in range(5):
+    var = significant_vars[i]
+    coeff = fw_model.params[var]
+    print var, coeff
+
+print 'The coefficents of the bottom 5 significant vars are:'
+for i in range(5):
+    var = significant_vars[-i - 1]
+    coeff = fw_model.params[var]
+    print var, coeff
+
 # PREDICTION
 print 'Starting Prediction phase...'
 
@@ -223,6 +235,8 @@ print 'Candidate alpha values to search for:', gs_params['alpha']
 gc = GridSearchCV(estimator=Ridge(), param_grid=gs_params)
 ridge_model = gc.fit(X_train, Y_train)
 Y_pred = ridge_model.predict(X_test)
+best_alpha = ridge_model.best_params_['alpha']
+print 'The best ridge model is obtained wiht an alpha of', best_alpha
 print 'RMSE of the best standardized ridge regression model:', mean_squared_error(Y_test, Y_pred) ** 0.5
 
 
@@ -234,6 +248,8 @@ print 'Candidate alpha values to search for:', gs_params['alpha']
 gc = GridSearchCV(estimator=Lasso(), param_grid=gs_params)
 lasso_model = gc.fit(X_train, Y_train)
 Y_pred = lasso_model.predict(X_test)
+best_alpha = lasso_model.best_params_['alpha']
+print 'The best lasso model is obtained wiht an alpha of', best_alpha
 print 'RMSE of the best standardized lasso regression model:', mean_squared_error(Y_test, Y_pred) ** 0.5
 
 
