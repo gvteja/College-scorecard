@@ -48,7 +48,7 @@ print 'Shape of college data:', df.shape
 
 print 'Removing identifier/fine grain columns like OPEID...'
 
-bad_threshold = 1 / 4.0
+bad_threshold = 1 / 8.0
 print 'Removing columns with fraction of bad count > ', bad_threshold
 
 removed_cols = ['\xef\xbb\xbfUNITID', 'OPEID','opeid6', 'ZIP', 'INSTNM', 'CITY', 'sch_deg', 'st_fips']
@@ -72,6 +72,7 @@ removed_cols_set = removed_cols_set.union(list(earning_cols.values))
 removed_cols_set = removed_cols_set.union(list(repayment_cols.values))
 
 # include the target variables also in the df
+#cols_to_include = {'ADM_RATE', 'mn_earn_wne_p10','md_earn_wne_p10'}
 cols_to_include = {'mn_earn_wne_p10','md_earn_wne_p10'}
 removed_cols_set = removed_cols_set - cols_to_include
 
