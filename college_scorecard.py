@@ -126,10 +126,52 @@ Y2 = df_y2.values
 
 df_x = df_numeric.drop(['mn_earn_wne_p10', 'md_earn_wne_p10'], axis=1)
 
+# DISCOVERY
+
+print 'Starting Discovery phase...'
+
+def forward_selection(df_x, df_y, k=None):
+    '''Given X and y, choose the top k features using a greedy forward selection, based on the MSE on the training data'''
+    if not k:
+        k = len(df_x.columns)
+    
+    remaining = set(df_x.columns)
+    selected = []
+
+    while remaining and len(selected) <= k:
+        scores = []
+        for candidate in remaining:
+            X = df_x[selected + [candidate]]
+            vanilla_lr = LinearRegression()
+            vanilla_lr = vanilla_lr.fit(X, df_y)
+            Y_pred = vanilla_lr.predict(X)
+            score = mean_squared_error(df_y, Y_pred)
+            scores.append((score, candidate))
+        
+        score, best_candidate = min(scores)
+        print len(selected), score, best_candidate
+        
+        remaining.remove(best_candidate)
+        selected.append(best_candidate)
+            
+    return selected
+
+
+print 'Discovering the top 100 features using forward selection:'
+fw_selected = forward_selection(df_xtrain, df_ytrain, 100)
+
+
+print 'Building a linear regression model using the selected features for significance testing...'
+model = LinearRegression()
+model = model.fit(df[fw_selected], df_y2)
+
+
+# PREDICTION
+print 'Starting Prediction phase...'
+
 print 'Standardizing X...'
 X = ss.zscore(df_x)
 print X.shape
-
 
 print 'Splitting data into 70 percent training and 30 percent testing...'
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y2, test_size=0.3, random_state=42)
@@ -169,7 +211,8 @@ Y_pred = lasso_model.predict(X_test)
 print 'RMSE of the best standardized lasso regression model:', mean_squared_error(Y_test, Y_pred) ** 0.5
 
 
-
+# split data into train, dev and test
+# todo: do this before, so that we have errors measured on the same test set
 for i in range(1, 9):
     n_components = 2 ** i
     #n_components = i
@@ -188,104 +231,4 @@ for i in range(1, 9):
     Y_pred = ridge_model.predict(X_reduced_test)
     print 'MSE for ', n_components, ' components with Ridge ', mean_squared_error(Y_test, Y_pred)
 
-
-# In[287]:
-
-def forward_selection(df_x, df_y, k=None):
-
-    if not k:
-        k = len(df_x.columns)
-    
-    remaining = set(df_x.columns)
-    selected = []
-
-    while remaining and len(selected) <= k:
-        scores = []
-        for candidate in remaining:
-            X = df_x[selected + [candidate]]
-            vanilla_lr = LinearRegression()
-            vanilla_lr = vanilla_lr.fit(X, df_y)
-            Y_pred = vanilla_lr.predict(X)
-            score = mean_squared_error(df_y, Y_pred)
-            scores.append((score, candidate))
-        
-        score, best_candidate = min(scores)
-        print len(selected), score, best_candidate
-        
-        remaining.remove(best_candidate)
-        selected.append(best_candidate)
-            
-    return selected
-
-
-
-# In[288]:
-
-selected = []
-for i in range(1, 31):
-    k = 10 * i
-    fw_selected = forward_selection(df_xtrain, df_ytrain, k)
-    selected.append((k, fw_selected))
-
-
-# In[294]:
-
-import pickle
-pickle.dump(selected, open('selected.p', 'w'))
-
-
-# In[296]:
-
-for (k, fw_selected) in selected:
-    model = LinearRegression()
-    model = model.fit(df_xtrain[fw_selected], df_ytrain)
-    Y_pred = model.predict(df_xtest[fw_selected])
-    print k, mean_squared_error(df_ytest, Y_pred)
-
-
-# In[297]:
-
-gs_params = {'alpha':[2**i for i in range(-10,20)]}
-
-for (k, fw_selected) in selected:
-    gc = GridSearchCV(estimator=Ridge(), param_grid=gs_params)
-    model = gc.fit(df_xtrain[fw_selected], df_ytrain)
-    Y_pred = model.predict(df_xtest[fw_selected])
-    print k, mean_squared_error(df_ytest, Y_pred)
-
-
-# In[298]:
-
-gs_params = {'alpha':[2**i for i in range(-10,20)]}
-
-for (k, fw_selected) in selected:
-    gc = GridSearchCV(estimator=Lasso(), param_grid=gs_params)
-    model = gc.fit(df_xtrain[fw_selected], df_ytrain)
-    Y_pred = model.predict(df_xtest[fw_selected])
-    print k, mean_squared_error(df_ytest, Y_pred)
-
-
-# In[ ]:
-
-
-
-
-# In[180]:
-
-[col for col in df.columns if 'earn'.lower() in col.lower()]
-
-
-# In[118]:
-
-any(['UNITID' in col for col in df.columns])
-
-
-# In[28]:
-
-x = [re.search(r'p\d$', col) for col in df.columns]
-x = [m.string for m in x if m]
-x.sort()
-print len(x)
-for m in x:
-    print m
 
