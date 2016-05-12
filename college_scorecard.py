@@ -180,12 +180,15 @@ formula = "{} ~ {} + 1".format('md_earn_wne_p10',' + '.join(fw_selected))
 fw_model = smf.ols(formula, df_numeric).fit()
 
 print 'Performing significance test on individual variables using benjamini hochberg correction...'
-reject, _, _, _  = multipletests(fw_model.pvalues[1:], method='fdr_bh')
+pvalues = fw_model.pvalues[1:]
+pvalues.sort(axis=1)
+reject, _, _, _  = multipletests(pvalues, method='fdr_bh')
 
+print x
 significant_vars = []
 for i in range(len(reject)):
     if reject[i]:
-        significant_vars.append(fw_selected[i])
+        significant_vars.append(pvalues.index[i])
 
 print 'Found {0} significant variables out of {1} selected variables'.format(len(significant_vars), len(fw_selected))
 
