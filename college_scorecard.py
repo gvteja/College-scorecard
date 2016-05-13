@@ -134,6 +134,8 @@ df_y2 = df_numeric['md_earn_wne_p10']
 Y1 = df_y1.values
 Y2 = df_y2.values
 
+df_numeric = (df_numeric - df_numeric.mean()) / (df_numeric.max() - df_numeric.min())
+
 df_x = df_numeric.drop(['mn_earn_wne_p10', 'md_earn_wne_p10'], axis=1)
 
 # DISCOVERY
