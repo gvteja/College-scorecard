@@ -48,7 +48,7 @@ print 'Shape of college data:', df.shape
 
 print 'Removing identifier/fine grain columns like OPEID...'
 
-bad_threshold = 1 / 8.0
+bad_threshold = 1 / 4.0
 print 'Removing columns with fraction of bad count > ', bad_threshold
 
 removed_cols = ['\xef\xbb\xbfUNITID', 'OPEID','opeid6', 'ZIP', 'INSTNM', 'CITY', 'sch_deg', 'st_fips']
@@ -184,7 +184,6 @@ pvalues = fw_model.pvalues[1:]
 pvalues.sort(axis=1)
 reject, _, _, _  = multipletests(pvalues, method='fdr_bh')
 
-print x
 significant_vars = []
 for i in range(len(reject)):
     if reject[i]:
@@ -223,6 +222,11 @@ print 'Shape of test X', X_test.shape
 print 'Shape of train y', Y_train.shape
 print 'Shape of test y', Y_test.shape
 
+print 'Generating error for baseline model: mean prdictor...'
+baseline = DummyRegressor()
+baseline.fit(X_train, Y_train)
+Y_pred = baseline.predict(X_test)
+print 'RMSE of the mean predictor model:', mean_squared_error(Y_test, Y_pred) ** 0.5
 
 print 'Training a linear regression model...'
 vanilla_lr = LinearRegression()
@@ -269,7 +273,7 @@ for i in range(1, 9):
     vanilla_lr = LinearRegression()
     vanilla_lr = vanilla_lr.fit(X_reduced_train, Y_train)
     Y_pred = vanilla_lr.predict(X_reduced_test)
-    print 'MSE for ', n_components, ' components with LR ', mean_squared_error(Y_test, Y_pred)
+    print 'MSE for ', n_components, ' components with LR ', mean_squared_error(Y_test, Y_pred) ** 0.5
 
     gs_params = {'alpha':[2**i for i in range(-10,20)]}
     gc = GridSearchCV(estimator=Ridge(), param_grid=gs_params)
